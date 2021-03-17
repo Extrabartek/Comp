@@ -14,21 +14,24 @@ class Stringer:
         self.t = t
         self.material = material
         self.length = length
-        self.area = a*t+(a-t)*t
-        self.I = (1/12)*a*pow(t,3)+pow((0.5*t),2)*t*a+(1/12)*t*pow((a-t),3)+(a-t)*pow((0.5*a+t),2)
-        self.mass = self.area*length*material.density
-        self.hole_mass = t*pow(0.0032/2,2)*math.pi*material.density
+        self.area = a * t + (a - t) * t
+        self.I = (1 / 12) * a * pow(t, 3) + pow((0.5 * t), 2) * t * a + (1 / 12) * t * pow((a - t), 3) + (a - t) * pow(
+            (0.5 * a + t), 2)
+        self.mass = self.area * length * material.density
+        self.hole_mass = t * pow(0.0032 / 2, 2) * math.pi * material.density
 
+#test
 class Skin:
     def __init__(self, a, b, t, material):
         self.a = a
         self.b = b
         self.t = t
         self.material = material
-        self.area = t*b
-        self.I = (1/12)*pow(t,3)*b
-        self.mass = a*b*t*material.density
-        self.hole_mass = t*pow(0.0032/2,2)*math.pi*material.density
+        self.area = t * b
+        self.I = (1 / 12) * pow(t, 3) * b
+        self.mass = a * b * t * material.density
+        self.hole_mass = t * pow(0.0032 / 2, 2) * math.pi * material.density
+
 
 class Rivet:
     def __init__(self, diametre, lenght, material, F_max_sheer):
@@ -36,8 +39,9 @@ class Rivet:
         self.lenght = lenght
         self.material = material
         self.F_max_sheer = F_max_sheer
-        self.mass = lenght*pow((diametre/2),2)*material.density*math.pi
-        
+        self.mass = lenght * pow((diametre / 2), 2) * material.density * math.pi
+
+
 class Panel:
     def __init__(self, config, rivet_per_stringer, profiles, Skin, req_buckle_force, req_ult_force):
         self.config = config
@@ -47,23 +51,25 @@ class Panel:
         self.Skin = Skin
         self.req_buckle_force = req_buckle_force
         self.req_ult_force = req_ult_force
-        self.rivet = riv_short 
+        self.rivet = riv_short
         if self.Skin.t > 0.00119 and self.profiles[1] != 0:
             self.rivet = riv_long
-        self.rivet_count = sum(config)*self.rivet_per_stringer
-        self.total_mass = self.rivet_count*(self.rivet.mass-self.Skin.hole_mass)+self.Skin.mass
+        self.rivet_count = sum(config) * self.rivet_per_stringer
+        self.total_mass = self.rivet_count * (self.rivet.mass - self.Skin.hole_mass) + self.Skin.mass
         for x in range(len(self.profiles)):
-            self.total_mass += (config[x]*profiles[x].mass - self.rivet_per_stringer*profiles[x].hole_mass)
+            self.total_mass += (config[x] * profiles[x].mass - self.rivet_per_stringer * profiles[x].hole_mass)
+
     def ultimate_check(self):
         total_area = self.Skin.area
         for x in range(len(self.profiles)):
-            total_area += self.config[x]*self.profiles[x].area
-        return total_area*self.Skin.material.sigma_yield > self.req_ult_force and self.rivet_per_stringer > ((self.req_ult_force)/(self.rivet.F_max_sheer*sum(self.config)))
+            total_area += self.config[x] * self.profiles[x].area
+        return total_area * self.Skin.material.sigma_yield > self.req_ult_force and self.rivet_per_stringer > (
+                (self.req_ult_force) / (self.rivet.F_max_sheer * sum(self.config)))
 
     def buckle_check(self):
         if sum(config) == 1:
             return False
-        rivet_spacing = (self.profiles[0].length-0.01)/(self.rivet_per_stringer-1)
+        rivet_spacing = (self.profiles[0].length - 0.01) / (self.rivet_per_stringer - 1)
         y_bar_individual = []
         I_total_individual = []
         boundry_condition = 4
@@ -76,32 +82,36 @@ class Panel:
             K_c = 0.0114*pow(a_by_b, 4) - 0.239*pow(a_by_b, 3) + 1.84*pow(a_by_b, 2) - 6.1744*a_by_b + 14.017
         total_area = self.Skin.area
         for x in range(len(self.profiles)):
-            total_area += self.config[x]*self.profiles[x].area
+            total_area += self.config[x] * self.profiles[x].area
         for x in range(len(self.profiles)):
             y_bar_individual.append(y_bar_cal(self.Skin, self.profiles[x]))
         y_bar = y_bar_individual[0][0]
         for x in range(len(self.config)):
-            y_bar += self.config[x]*y_bar_individual[x][1]
+            y_bar += self.config[x] * y_bar_individual[x][1]
         for x in range(len(self.profiles)):
             I_total_individual.append(I_total_cal(self.Skin, self.profiles[x], y_bar))
         I_total = I_total_individual[0][0]
         for x in range(len(self.config)):
-            I_total += self.config[x]*I_total_individual[x][1]
-        buckle_force_column = buckle_force_column_cal(self.Skin.a-buckle_a_difference, self.Skin.material.E, boundry_condition, I_total)
-        applied_buckle_stress = (self.req_buckle_force)/(total_area)
-        sigma_crit_sheet = K_c*self.Skin.material.E*pow((self.Skin.t/stringer_spacing),2)
-        sigma_ir = 0.9*pop_rivet_c*self.Skin.material.E*pow((self.Skin.t/rivet_spacing),2)
-        sigma_buckle = buckle_force_column/total_area
-        return sigma_crit_sheet>applied_buckle_stress and sigma_ir>applied_buckle_stress and sigma_buckle>applied_buckle_stress
+            I_total += self.config[x] * I_total_individual[x][1]
+        buckle_force_column = buckle_force_column_cal(self.Skin.a - buckle_a_difference, self.Skin.material.E,
+                                                      boundry_condition, I_total)
+        applied_buckle_stress = (self.req_buckle_force) / (total_area)
+        sigma_crit_sheet = K_c * self.Skin.material.E * pow((self.Skin.t / stringer_spacing), 2)
+        sigma_ir = 0.9 * pop_rivet_c * self.Skin.material.E * pow((self.Skin.t / rivet_spacing), 2)
+        sigma_buckle = buckle_force_column / total_area
+        return sigma_crit_sheet > applied_buckle_stress and sigma_ir > applied_buckle_stress and sigma_buckle > applied_buckle_stress
+
 
 def y_bar_cal(Skin, Stringer):
     # Naming is weird beacause of the transletion for the Excel
-    C60 =  Skin.t
+    C60 = Skin.t
     C56 = Skin.b
     D62 = Stringer.t
     C62 = Stringer.a
-    y_bar_skin = (((C60*C56)/(C60*C56+D62*(C62+C62-D62)))*(0.5*C60))
-    y_bar_stringer = (((D62*(C62+C62-D62))/(C60*C56+D62*(C62+C62-D62)))*((((C62-D62)*D62)/(D62*(C62+C62-D62)))*(0.5*C62+0.5*D62)+((D62*C62)/(D62*(C62+C62-D62)))*(0.5*D62)))
+    y_bar_skin = (((C60 * C56) / (C60 * C56 + D62 * (C62 + C62 - D62))) * (0.5 * C60))
+    y_bar_stringer = (((D62 * (C62 + C62 - D62)) / (C60 * C56 + D62 * (C62 + C62 - D62))) * (
+            (((C62 - D62) * D62) / (D62 * (C62 + C62 - D62))) * (0.5 * C62 + 0.5 * D62) + (
+            (D62 * C62) / (D62 * (C62 + C62 - D62))) * (0.5 * D62)))
     return [y_bar_skin, y_bar_stringer]
 
 def I_total_cal(Skin, Stringer, y_bar):
