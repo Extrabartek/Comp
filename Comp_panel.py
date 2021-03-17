@@ -68,10 +68,12 @@ class Panel:
         I_total_individual = []
         boundry_condition = 4
         pop_rivet_c = 2.1
-        buckle_a_difference = 0.06
+        buckle_a_difference = 0.0
         stringer_spacing = (self.Skin.b)/(sum(config)-1)
         a_by_b = (self.Skin.a-buckle_a_difference)/(stringer_spacing)
-        K_c = 0.0114*pow(a_by_b, 4) - 0.239*pow(a_by_b, 3) + 1.84*pow(a_by_b, 2) - 6.1744*a_by_b + 14.017
+        K_c = 6.3
+        if a_by_b < 6:
+            K_c = 0.0114*pow(a_by_b, 4) - 0.239*pow(a_by_b, 3) + 1.84*pow(a_by_b, 2) - 6.1744*a_by_b + 14.017
         total_area = self.Skin.area
         for x in range(len(self.profiles)):
             total_area += self.config[x]*self.profiles[x].area
