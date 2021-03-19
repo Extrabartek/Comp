@@ -1,12 +1,13 @@
 import math
 
+
 class Material:
     def __init__(self, sigma_ult, sigma_yield, E, density):
         self.sigma_ult = sigma_ult
         self.sigma_yield = sigma_yield
         self.E = E
         self.density = density
-    
+
 
 class Stringer:
     def __init__(self, a, t, material, length):
@@ -15,12 +16,14 @@ class Stringer:
         self.material = material
         self.length = length
         self.area = a * t + (a - t) * t
-        self.I = (1 / 12) * a * pow(t, 3) + pow((0.5 * t), 2) * t * a + (1 / 12) * t * pow((a - t), 3) + (a - t) * pow(
+        self.I = (1 / 12) * a * pow(t, 3) + pow((0.5 * t), 2) * t * a + (1 / 12) * t * pow((a - t), 3) + (
+                    a - t) * t * pow(
             (0.5 * a + t), 2)
         self.mass = self.area * length * material.density
         self.hole_mass = t * pow(0.0032 / 2, 2) * math.pi * material.density
 
-#test
+
+# test
 class Skin:
     def __init__(self, a, b, t, material):
         self.a = a
@@ -75,11 +78,11 @@ class Panel:
         boundry_condition = 4
         pop_rivet_c = 2.1
         buckle_a_difference = 0.0
-        stringer_spacing = (self.Skin.b)/(sum(config)-1)
-        a_by_b = (self.Skin.a-buckle_a_difference)/(stringer_spacing)
+        stringer_spacing = (self.Skin.b) / (sum(config) - 1)
+        a_by_b = (self.Skin.a - buckle_a_difference) / (stringer_spacing)
         K_c = 6.3
         if a_by_b < 6:
-            K_c = 0.0114*pow(a_by_b, 4) - 0.239*pow(a_by_b, 3) + 1.84*pow(a_by_b, 2) - 6.1744*a_by_b + 14.017
+            K_c = 0.0114 * pow(a_by_b, 4) - 0.239 * pow(a_by_b, 3) + 1.84 * pow(a_by_b, 2) - 6.1744 * a_by_b + 14.017
         total_area = self.Skin.area
         for x in range(len(self.profiles)):
             total_area += self.config[x] * self.profiles[x].area
@@ -104,44 +107,49 @@ class Panel:
 
 def y_bar_cal(Skin, Stringer):
     # Naming is weird beacause of the transletion for the Excel
-    C60 = Skin.t
-    C56 = Skin.b
-    D62 = Stringer.t
-    C62 = Stringer.a
-    y_bar_skin = (((C60 * C56) / (C60 * C56 + D62 * (C62 + C62 - D62))) * (0.5 * C60))
-    y_bar_stringer = (((D62 * (C62 + C62 - D62)) / (C60 * C56 + D62 * (C62 + C62 - D62))) * (
-            (((C62 - D62) * D62) / (D62 * (C62 + C62 - D62))) * (0.5 * C62 + 0.5 * D62) + (
-            (D62 * C62) / (D62 * (C62 + C62 - D62))) * (0.5 * D62)))
+    SkinT = Skin.t
+    SkinB = Skin.b
+    StrT = Stringer.t
+    StrA = Stringer.a
+    y_bar_skin = (((SkinT * SkinB) / (SkinT * SkinB + StrT * (StrA + StrA - StrT))) * (0.5 * SkinT))
+    y_bar_stringer = (((StrT * (StrA + StrA - StrT)) / (SkinT * SkinB + StrT * (StrA + StrA - StrT))) * (
+            (((StrA - StrT) * StrT) / (StrT * (StrA + StrA - StrT))) * (0.5 * StrA + 0.5 * StrT) + (
+            (StrT * StrA) / (StrT * (StrA + StrA - StrT))) * (0.5 * StrT)))
     return [y_bar_skin, y_bar_stringer]
 
+
 def I_total_cal(Skin, Stringer, y_bar):
-    # Naming is weird beacause of the transletion for the Excel
-    C11 =  Skin.t
-    C7 = Skin.b
-    D62 = Stringer.t
-    C62 = Stringer.a
-    L55 = y_bar
-    I_total_skin = (((1/12)*C7*(pow(C11,3)))+((pow((L55-0.5*C11),2))*C7*C11))
-    I_total_stringer = (((1/12)*D62*(pow((C62-D62),3)))+((pow(((C62*0.5+0.5*D62)-L55),2))*C11*(C62-C11))+(((1/12)*C62*(pow(D62,3))+(pow((L55-0.5*D62),2))*D62*C62)))
+    SkinT = Skin.t
+    SkinB = Skin.b
+    StrT = Stringer.t
+    StrA = Stringer.a
+    yb = y_bar
+    I_total_skin = (((1 / 12) * SkinB * (pow(SkinT, 3))) + ((pow((yb - 0.5 * SkinT), 2)) * SkinB * SkinT))
+    I_total_stringer = (((1 / 12) * StrT * (pow((StrA - StrT), 3))) + (
+                (pow(((StrA * 0.5 + 0.5 * StrT) - yb), 2)) * SkinT * (StrA - SkinT)) + (
+                        ((1 / 12) * StrA * (pow(StrT, 3)) + (pow((yb - 0.5 * StrT), 2)) * StrT * StrA)))
     return [I_total_skin, I_total_stringer]
 
+
 def buckle_force_column_cal(a, E, boundry_condition, I_total):
-    return (boundry_condition*E*I_total*pow(math.pi,2))/(pow(a,2))
+    return (boundry_condition * E * I_total * pow(math.pi, 2)) / (pow(a, 2))
+
 
 def mass_sort(Panel):
-    return Panel.total_mass 
-     
+    return Panel.total_mass
+
+
 aluminium = Material(127000000, 100000000, 63500000000, 2780)
 steel = Material(400000000, 25000000, 200000000000, 7850)
-L1 = Stringer(0.02,0.0015,aluminium,0.435)
-L2 = Stringer(0.02,0.002,aluminium,0.435)
-L3 = Stringer(0.015,0.001,aluminium,0.435)
-L4 = Stringer(0.015,0.0015,aluminium,0.435)
+L1 = Stringer(0.02, 0.0015, aluminium, 0.435)
+L2 = Stringer(0.02, 0.002, aluminium, 0.435)
+L3 = Stringer(0.015, 0.001, aluminium, 0.435)
+L4 = Stringer(0.015, 0.0015, aluminium, 0.435)
 F1 = Skin(0.495, 0.4, 0.0008, aluminium)
 F2 = Skin(0.495, 0.4, 0.0012, aluminium)
 riv_short = Rivet(0.0032, 0.006, steel, 1060)
 riv_long = Rivet(0.0032, 0.0104, steel, 1060)
-config = [7,0,0,0]
+config = [7, 0, 0, 0]
 profiles = [L1, L2, L3, L4]
 
 panel = Panel(config, 12, profiles, F1, 34500, 60000)
@@ -153,7 +161,7 @@ for x in range(0, 12, 1):
     for y in range(0, 12, 1):
         for z in range(0, 12, 1):
             for w in range(0, 12, 1):
-                for s in range (2, 20, 1):
+                for s in range(2, 20, 1):
                     config = [x, y, z, w]
                     panel = Panel(config, s, profiles, F2, 34500, 60000)
                     if panel.total_mass < mass_guard:
@@ -164,7 +172,7 @@ for x in range(0, 12, 1):
     for y in range(0, 12, 1):
         for z in range(0, 12, 1):
             for w in range(0, 12, 1):
-                for s in range (2, 20, 1):
+                for s in range(2, 20, 1):
                     config = [x, y, z, w]
                     panel = Panel(config, s, profiles, F1, 34500, 60000)
                     if panel.total_mass < mass_guard:
@@ -172,7 +180,8 @@ for x in range(0, 12, 1):
                             possible_config.append(panel)
                             mass_guard = panel.total_mass
 
-possible_config.sort(key = mass_sort)
+possible_config.sort(key=mass_sort)
 
 for x in range(len(possible_config)):
-    print(str(possible_config[x].config) + ' ' + str(possible_config[x].rivet_per_stringer) + ' ' + str(possible_config[x].total_mass) + ' ' + str(possible_config[x].Skin.t))
+    print(str(possible_config[x].config) + ' ' + str(possible_config[x].rivet_per_stringer) + ' ' + str(
+        possible_config[x].total_mass) + ' ' + str(possible_config[x].Skin.t))
