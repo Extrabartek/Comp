@@ -107,6 +107,16 @@ class Panel:
         sigma_crit_sheet = K_c * self.Skin.material.E * pow((self.Skin.t / stringer_spacing), 2)
         sigma_ir = 0.9 * pop_rivet_c * self.Skin.material.E * pow((self.Skin.t / rivet_spacing), 2)
         sigma_buckle = buckle_force_column / total_area
+        global sheet
+        global inner
+        global column
+        if sigma_crit_sheet > applied_buckle_stress:
+            sheet += 1
+        elif sigma_ir > applied_buckle_stress:
+            inner += 1
+        elif sigma_buckle > applied_buckle_stress:
+            column += 1
+
         return sigma_crit_sheet > applied_buckle_stress and sigma_ir > applied_buckle_stress and sigma_buckle > applied_buckle_stress
 
 
@@ -141,7 +151,7 @@ def I_total_cal(Skin, Stringer, y_bar, y_bar_arr):
     I_total_skin = (1 / 12) * SkinB * (pow(SkinT, 3)) + Skin.area * pow((yb - SkinT * 0.5), 2)
     I_stringer = (1 / 12) * (StrA - StrT) * pow(StrT, 3) + (1 / 12) * StrT * pow(StrA, 3) + (StrA - StrT) * StrT * pow(
         ybstr - StrT * 0.5, 2) + StrT * StrA * pow(ybstr - StrA * 0.5, 2)  # Stringer about its y_bar
-    I_total_stringer = I_stringer + Stringer.area * pow(yb - ybstr, 2)      # Stringer about panel y_bar
+    I_total_stringer = I_stringer + Stringer.area * pow(yb - ybstr, 2)  # Stringer about panel y_bar
     return [I_total_skin, I_total_stringer]
 
 
@@ -153,6 +163,9 @@ def mass_sort(Panel):
     return Panel.total_mass
 
 
+inner = 0
+sheet = 0
+column = 0
 aluminium = Material(127000000, 100000000, 63500000000, 2780)
 steel = Material(400000000, 25000000, 200000000000, 7850)
 L1 = Stringer(0.02, 0.0015, aluminium, 0.495)  # changed lenght of the stringrs
@@ -165,10 +178,12 @@ riv_short = Rivet(0.0032, 0.006, steel, 1060)
 riv_long = Rivet(0.0032, 0.0104, steel, 1060)
 config = [7, 0, 0, 0]
 profiles = [L1, L2, L3, L4]
+Fbuckling = 34500*1.2
+Fult = 60000
 
 print(y_bar_cal(F1, L4))
 
-panel = Panel(config, 12, profiles, F1, 34500, 60000)
+# panel = Panel(config, 12, profiles, F1, 34500, 60000)
 
 possible_config = []
 mass_guard = 1
@@ -179,7 +194,7 @@ for x in range(0, 12, 1):
             for w in range(0, 12, 1):
                 for s in range(2, 20, 1):
                     config = [x, y, z, w]
-                    panel = Panel(config, s, profiles, F2, 34500, 60000)
+                    panel = Panel(config, s, profiles, F2, Fbuckling, Fult)
                     if panel.total_mass < mass_guard:
                         if panel.buckle_check() and panel.ultimate_check():
                             possible_config.append(panel)
@@ -190,7 +205,7 @@ for x in range(0, 12, 1):
             for w in range(0, 12, 1):
                 for s in range(2, 20, 1):
                     config = [x, y, z, w]
-                    panel = Panel(config, s, profiles, F1, 34500, 60000)
+                    panel = Panel(config, s, profiles, F1, Fbuckling, Fult)
                     if panel.total_mass < mass_guard:
                         if panel.buckle_check() and panel.ultimate_check():
                             possible_config.append(panel)
@@ -201,3 +216,4 @@ possible_config.sort(key=mass_sort)
 for x in range(len(possible_config)):
     print(str(possible_config[x].config) + ' ' + str(possible_config[x].rivet_per_stringer) + ' ' + str(
         possible_config[x].total_mass) + ' ' + str(possible_config[x].Skin.t))
+print([sheet, inner, column])
