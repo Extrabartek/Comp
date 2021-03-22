@@ -76,8 +76,8 @@ class Panel:
         if sum(config) < 5:  # to speed up the program we know from previous iterations that we
                              #  can ignore panels with less than 5 stringers
             return False
-        rivet_spacing = (self.profiles[0].length - 0.01) / (
-                self.rivet_per_stringer + 1)
+        rivet_spacing = (self.profiles[0].length - 0.07) / (
+                self.rivet_per_stringer - 1)
         y_bar_individual = []
         I_total_individual = []
         boundry_condition = 4
@@ -182,7 +182,7 @@ riv_short = Rivet(0.0032, 0.006, steel, 1060)
 riv_long = Rivet(0.0032, 0.0104, steel, 1060)
 config = [7, 0, 0, 0]  # number of profiles of a given type
 profiles = [L1, L2, L3, L4]
-safetyFactor = 1
+safetyFactor = 1.2
 Fbuckling = 34500 * safetyFactor
 Fult = 40000 * safetyFactor
 
@@ -221,4 +221,4 @@ for x in range(len(possible_config)):
           + ' ' + str(
         possible_config[x].total_mass) + ' ' + str(possible_config[x].Skin.t))
 print([sheet, inner, column])
-print(math.sqrt(-2))
+
