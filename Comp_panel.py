@@ -53,7 +53,7 @@ class Panel:
         self.req_buckle_force = req_buckle_force
         self.req_ult_force = req_ult_force
         self.rivet = riv_short
-        if self.Skin.t > 0.00119 and self.profiles[1] != 0:  # should be skin.t + stringer
+        if self.Skin.t > 0.00119 and self.profiles[1] != 0:
             self.rivet = riv_long
         self.rivet_count = sum(config) * self.rivet_per_stringer
         self.total_mass = self.rivet_count * (self.rivet.mass - self.Skin.hole_mass) + self.Skin.mass
@@ -64,20 +64,19 @@ class Panel:
         total_area = self.Skin.area
         for x in range(len(self.profiles)):
             total_area += self.config[x] * self.profiles[x].area
-        return total_area * self.Skin.material.sigma_yield > self.req_ult_force  # rivets are irrelevant
+        return total_area * self.Skin.material.sigma_yield > self.req_ult_force
 
     def buckle_check(self):
         if sum(config) < 5:
             return False
         rivet_spacing = (self.profiles[0].length - 0.01) / (
-                self.rivet_per_stringer + 1)  # check if +1 is correct
+                self.rivet_per_stringer + 1)
         y_bar_individual = []
         I_total_individual = []
         boundry_condition = 4
         pop_rivet_c = 2.1
-        buckle_a_difference = 0.0  # What's that? It shows up here and no other value is ever assigned to it
         stringer_spacing = self.Skin.b / (sum(config) - 1)
-        a_by_b = (self.Skin.a - buckle_a_difference) / stringer_spacing
+        a_by_b = self.Skin.a / stringer_spacing
         K_c = 6.3
         if a_by_b < 6:
             K_c = 0.0114 * pow(a_by_b, 4) - 0.239 * pow(a_by_b, 3) + 1.84 * pow(a_by_b, 2) - 6.1744 * a_by_b + 14.017
@@ -101,7 +100,7 @@ class Panel:
         I_total = I_total_individual[0][0]
         for x in range(len(self.config)):
             I_total += self.config[x] * I_total_individual[x][1]
-        buckle_force_column = buckle_force_column_cal(self.Skin.a - buckle_a_difference, self.Skin.material.E,
+        buckle_force_column = buckle_force_column_cal(self.Skin.a, self.Skin.material.E,
                                                       boundry_condition, I_total)
         applied_buckle_stress = (self.req_buckle_force) / (total_area)
         sigma_crit_sheet = K_c * self.Skin.material.E * pow((self.Skin.t / stringer_spacing), 2)
@@ -122,14 +121,8 @@ class Panel:
 
 def y_bar_cal(Skin, Stringer):
     SkinT = Skin.t
-    SkinB = Skin.b  # It doesn't change skin y_bar, why do we want it here?
     StrT = Stringer.t
     StrA = Stringer.a
-    # I have no idea what's going on here
-    # y_bar_skin = (((SkinT * SkinB) / (SkinT * SkinB + StrT * (StrA + StrA - StrT))) * (0.5 * SkinT))
-    # y_bar_stringer = (((StrT * (StrA + StrA - StrT)) / (SkinT * SkinB + StrT * (StrA + StrA - StrT))) * (
-    #        (((StrA - StrT) * StrT) / (StrT * (StrA + StrA - StrT))) * (0.5 * StrA + 0.5 * StrT) + (
-    #        (StrT * StrA) / (StrT * (StrA + StrA - StrT))) * (0.5 * StrT)))
     y_bar_skin = SkinT * 0.5
     y_bar_stringer = SkinT + (StrT * 0.5 * (StrA - StrT) * StrA + 0.5 * StrA * StrA * StrT) / (
             StrA * StrT + (StrA - StrT) * StrT)
@@ -144,10 +137,6 @@ def I_total_cal(Skin, Stringer, y_bar, y_bar_arr):
     ybsk = y_bar_arr[0]
     ybstr = y_bar_arr[1] - SkinT
     yb = y_bar
-    # I_total_skin = (((1 / 12) * SkinB * (pow(SkinT, 3))) + ((pow((yb - 0.5 * SkinT), 2)) * SkinB * SkinT))
-    # I_total_stringer = (((1 / 12) * StrT * (pow((StrA - StrT), 3))) + (
-    # (pow(((StrA * 0.5 + 0.5 * StrT) - yb), 2)) * SkinT * (StrA - SkinT)) + (
-    #  ((1 / 12) * StrA * (pow(StrT, 3)) + (pow((yb - 0.5 * StrT), 2)) * StrT * StrA)))
     I_total_skin = (1 / 12) * SkinB * (pow(SkinT, 3)) + Skin.area * pow((yb - SkinT * 0.5), 2)
     I_stringer = (1 / 12) * (StrA - StrT) * pow(StrT, 3) + (1 / 12) * StrT * pow(StrA, 3) + (StrA - StrT) * StrT * pow(
         ybstr - StrT * 0.5, 2) + StrT * StrA * pow(ybstr - StrA * 0.5, 2)  # Stringer about its y_bar
@@ -178,8 +167,9 @@ riv_short = Rivet(0.0032, 0.006, steel, 1060)
 riv_long = Rivet(0.0032, 0.0104, steel, 1060)
 config = [7, 0, 0, 0]
 profiles = [L1, L2, L3, L4]
-Fbuckling = 34500*1.2
-Fult = 60000
+safetyFactor = 1.2
+Fbuckling = 34500*safetyFactor
+Fult = 40000*safetyFactor
 
 print(y_bar_cal(F1, L4))
 
